@@ -57,7 +57,7 @@
 
 			'List of All Usable File Extensions
 			dim fileExtList
-			fileExtList = split("jpg,jpeg,jpe,jif,jfif,jfi,tif,tiff,png,gif")
+			fileExtList = split("jpg,jpeg,jpe,jif,jfif,jfi,tif,tiff,png,gif,bmp")
 
 			'Files Not Recognized By WINDOWS as Images
 			dim jpgExtList
@@ -89,6 +89,12 @@
 									"#  Scale long dimension to 1000 pixels, decreases size ONLY, MAINTAINS ASPECT RATIO" & vbNewLine & _
 									vbNewLine & _
 									"###### OTHER PROCEDURES ######" & vbNewLine & _
+									vbNewLine & _
+									"#jpg" & vbNewLine & _
+									"#  Saves as .jpg file" & vbNewLine & _
+									vbNewLine & _
+									"#png" & vbNewLine & _
+									"#  Saves as .png file" & vbNewLine & _
 									vbNewLine & _
 									"#add \X50 \Y50 ""T:\Projects\2016-11-25 GIMP\Working 2017-02-13\TC0827 2017-02-03 002.JPG"" " & vbNewLine & _
 									"#  Overlays image into current image (UNDER CONSTRUCTION - DOES NOT WORK)" & vbNewLine & _
@@ -165,6 +171,11 @@
 	'2019-05-09
 	'Removed GIF Output
 	'	(Too much overhead, output was poor quality, better tools avaiable)
+	
+'v1.10
+	'2019-10-06
+	'Can force file type
+	'Fixed bugs
 
 			
 '###################################################################################
@@ -200,6 +211,7 @@ sTime = Timer
 	dim rszBPix(10000)
 	oFolderName = ""
 	backupDir = ""
+	fileType = ""
 
 	'Configuration File
 	configFileExists = false
@@ -508,6 +520,12 @@ for i = 0 to rawArgCount-1
 		end if
 
 
+	elseif left(rawArgs(i), 3) = "jpg" then 																		'Create Copies
+		fileType = "jpg"
+		
+	elseif left(rawArgs(i), 3) = "png" then 																		'Create Copies
+		fileType = "png"
+		
 	elseif left(rawArgs(i), 4) = "copy" then 																		'Create Copies
 		oCompleteSuffix = right(rawArgs(i),len(rawArgs(i)) - 5)
 		
@@ -532,6 +550,25 @@ for i = 0 to rawArgCount-1
 	end if
 next
 
+'###################################################################################
+
+			'Get image dimensions (if necessary)
+
+'###################################################################################
+
+
+redim imageDim(totalImageCount,2)
+if dimensions then			
+	set oShell = CreateObject("Shell.Application")
+	set oFolder = oShell.Namespace(replace(left(fileList(0, 1), inStrRev(fileList(i, 1),"/")),"/","\"))
+	for i = 0 to totalImageCount-1
+		set oFolderItem = oFolder.parsename(right(fileList(i, 1), len(fileList(i, 1))-inStrRev(fileList(i, 1),"/")))
+		oString = oFolder.getdetailsof(oFolderItem,31)
+		oStringParse = split(oString)
+		imageDim(i,0) = CInt(right(oStringParse(0), len(oStringParse(0))-1))
+		imageDim(i,1) = CInt(left(oStringParse(2), len(oStringParse(2))-1))
+	next
+end if
 
 
 
@@ -672,19 +709,24 @@ for i = 0 to totalImageCount - 1
 		end if
 		
 		'Save & Close commands
-		saveImage = B & "(gimp-file-save 1 " & GIMPimage & " " & GIMPlayer & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & ")" & Chr(34) & " "
+		if fileType = "" then
+			saveImage = B & "(gimp-file-save 1 " & GIMPimage & " " & GIMPlayer & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & ")" & Chr(34) & " "
+		else
+			oCompleteName = left(oCompleteName,inStrRev(oCompleteName, ".")) & fileType
+			saveImage = B & "(gimp-file-save 1 " & GIMPimage & " " & GIMPlayer & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & " \" & Chr(34) & oCompleteName & "\" & Chr(34) & ")" & Chr(34) & " "
+		end if
 		closeImage = B & "(gimp-image-delete " & GIMPimage & ")" & Chr(34) & " "
 
 
 		'Construct entire Shell Command for current image
-		if  len(oArg & overlayArg & txtArg & resizeArg) = 0 then
+		if  len(oArg & overlayArg & txtArg & resizeArg) = 0 and fileType = "" then
 			increment = true
 		elseif GIMPimage > imgPerCommand or len(oCmdString(commandStringNumber)) > maxStringLength then		 'New command thread if images/thread exceeds set value or thread length exceeds the character limit
 			commandStringNumber = commandStringNumber + 1
 			redim preserve oCmdString(commandStringNumber)
 			oCmdString(commandStringNumber) = oCmd
-			GIMPimage = 0
-			GIMPlayer = 0
+			GIMPimage = 1
+			GIMPlayer = 2
 		else
 			increment = true
 			oCmdStringNew = loadImage		
