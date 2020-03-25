@@ -2,7 +2,7 @@
 
 A tool to easily apply edits to multiple photos using GIMP.
 
-See https://gerritsendesign.wordpress.com/2019/05/09/automating-gimp/
+See https://td0g.ca/2019/05/09/automating-gimp/
 
 ## Instructions
 
