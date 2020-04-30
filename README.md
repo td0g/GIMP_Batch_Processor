@@ -17,3 +17,8 @@ Drag-and-drop the images onto the .vbs script, or double-click the .vbs script i
 Currently the script easily annotates and resizes images.
 
 It can also apply any procedures found in the GIMP Procedure Database (PDB).  See the example Settings file for more info.
+
+
+## License
+
+Software is licensed under a [GNU GPL v3 License](https://www.gnu.org/licenses/gpl-3.0.txt)
